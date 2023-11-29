@@ -1,0 +1,61 @@
+version: ${DOCKER_COMPOSE_VERSION}
+
+services:
+  mongo_alynisits:
+    image: mongo:latest
+    container_name: mongo_alynisits
+    restart: always
+    env_file:
+      - .env
+    volumes:
+      - ./mongo_alynisits:/data/db
+    ports:
+      - "27017:27017"
+    environment:
+      - "MONGO_INITDB_ROOT_USERNAME=${MONGO_INITDB_ROOT_USERNAME}"
+      - "MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD}"
+    networks:
+      network_alynisits:
+        ipv4_address: 192.168.1.3
+  
+  streamlit_alynisits:
+    build:
+      context: streamlit_alynisits
+    image: streamlit_alynisits
+    container_name: streamlit_alynisits
+    volumes:
+      - ./streamlit_alynisits/app:/code
+      - ./streamlit_alynisits/config:/root/.streamlit
+    ports:
+      - "8501:8501"
+    depends_on:
+      - mongo_alynisits
+    networks:
+      network_alynisits:
+        ipv4_address: 192.168.1.4
+  
+  fastapi_alynisits:
+    build:
+      context: fastapi_alynisits
+    image: fastapi_alynisits
+    container_name: fastapi_alynisits
+    env_file:
+      - .env
+    volumes:
+      - ./fastapi_alynisits/app:/code/app
+    ports:
+      - "8000:8000"
+    depends_on:
+      - mongo_alynisits
+    networks:
+      network_alynisits:
+        ipv4_address: 192.168.1.17
+
+networks:
+  network_alynisits:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: ${DOCKER_COMPOSE_SUBNET}
+          gateway: ${DOCKER_COMPOSE_GATEWAY}
